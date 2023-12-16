@@ -1,0 +1,166 @@
+
+# ----------- #
+# Image Tools #
+# ----------- #
+
+# Get info
+Dism /Get-ImageInfo /imagefile:"IMAGE_LOCATION"
+
+?????????????????????????????
+
+# Mount & Dismount
+Dism /Mount-Image /ImageFile:"IMAGE_LOCATION" /index:INDEX_ID /MountDir:"MOUNT_FOLDER"
+dism /get-MountedWiminfo
+dism /remount-wim /MountDir:"MOUNT_FOLDER"
+Dism /Unmount-Image /MountDir:"MOUNT_FOLDER" /commit
+Dism /Unmount-Image /MountDir:"MOUNT_FOLDER" /discard
+
+# Force Dismount / Clean Mount Points
+DISM /Cleanup-Wim
+DISM /Cleanup-Mountpoints
+
+?????????????????????????????
+
+# Create
+Dism /Capture-Image /ImageFile:"D:\Images\Fabrikam.wim" /CaptureDir:C:\ /Name:Fabrikam
+
+# Add
+Dism /Append-Image /ImageFile:"IMAGE_LOCATION" /CaptureDir:"SOURCE_FOLDER" /Name:"IMAGE_NAME"
+
+# Delete
+Dism /Delete-Image /ImageFile:"IMAGE_LOCATION" /Index:INDEX_ID
+
+# Export
+DISM /Export-Image /SourceImageFile:"SOURCE_IMAGE_LOCATION" /ALL /DestinationImageFile:"TARGET_IMAGE_LOCATION" /Compress:max /CheckIntegrity
+DISM /Export-Image /SourceImageFile:"SOURCE_IMAGE_LOCATION" /SourceIndex:INDEX_ID /DestinationImageFile:"TARGET_IMAGE_LOCATION" /Compress:max /CheckIntegrity
+
+# WIM/ESD
+Change TARGET_IMAGE_LOCATION.XXX to Sample_FILE.WIM / Sample_FILE.ESD
+DISM /Export-Image /SourceImageFile:"SOURCE_IMAGE_LOCATION" /SourceIndex:INDEX_ID /DestinationImageFile:"TARGET_IMAGE_LOCATION.XXX" /Compress:max /CheckIntegrity
+
+# -------------- #
+# Edition Change #
+# -------------- #
+
+Dism /Online /Get-CurrentEdition
+Dism /Online /Get-TargetEditions
+Dism /online /Set-Edition:ServerStandard /ProductKey:N69G4-B89J2-4G8F4-WWYCC-J464C /AcceptEula
+
+Dism /Image:"%cd%\Mount" /Get-CurrentEdition
+Dism /Image:"%cd%\Mount" /Get-TargetEditions
+Dism /Image:"%cd%\Mount" /Set-Edition:IoTEnterpriseS /AcceptEula
+
+# ---------------------------------- #
+# Enable or Disable Windows Features #
+# ---------------------------------- #
+
+:: PS Command
+
+Get-WindowsOptionalFeature
+Disable-WindowsOptionalFeature
+
+:: DISM Command
+
+Dism /online /Get-Features
+Dism /online /Get-FeatureInfo /FeatureName:TFTP
+Dism /online /Enable-Feature /FeatureName:TFTP /All
+Dism /online /Disable-Feature /FeatureName:TFTP [/Remove]
+
+Dism /Image:"MOUNT_FOLDER" /Get-Features
+Dism /Image:"MOUNT_FOLDER" /Get-FeatureInfo /FeatureName:TFTP
+Dism /Image:"MOUNT_FOLDER" /Enable-Feature /FeatureName:TFTP /All
+Dism /Image:"MOUNT_FOLDER" /Disable-Feature /FeatureName:TFTP [/Remove]
+
+# --------------------------------------------------- #
+# Capabilities Package Servicing Command-Line Options #
+# --------------------------------------------------- #
+
+:: PS Command
+
+Get-WindowsCapability -Online
+Add-WindowsCapability -Online
+Remove-WindowsCapability -Online
+
+Get-WindowsCapability -Path "C:\mount\Windows"
+Add-WindowsCapability -Path "C:\mount\Windows"
+Remove-WindowsCapability -Path "C:\mount\Windows"
+
+:: DISM Command
+
+DISM /Online /Get-Capabilities
+DISM /Online /Get-CapabilityInfo /CapabilityName:Language.Basic~~~en-US~0.0.1.0
+Dism /Online /Remove-Capability /CapabilityName:Language.Basic~~~en-US~0.0.1.0
+
+DISM /Image:"MOUNT_FOLDER" /Get-Capabilities
+DISM /Image:"MOUNT_FOLDER" /Get-CapabilityInfo /CapabilityName:Language.Basic~~~en-US~0.0.1.0
+Dism /Image:"MOUNT_FOLDER" /Remove-Capability /CapabilityName:Language.Basic~~~en-US~0.0.1.0
+
+# ----------------------------------------------------------------- #
+# App Package (.appx or .appxbundle) Servicing Command-Line Options #
+# ----------------------------------------------------------------- #
+
+:: PS Command
+
+Add-AppxProvisionedPackage -Online
+Add-AppxPackage
+
+Get-AppXProvisionedPackage -Online       /    Get-ProvisionedAppxPackage -Online
+Get-AppXProvisionedPackage -path 'Mount' /    Get-ProvisionedAppxPackage -path 'Mount'
+Get-WindowsPackage -online               |    Get-WindowsPackage -path 'Mount'
+Get-AppxPackage [-allusers]
+
+Remove-AppxPackage
+Remove-AppXProvisionedPackage -Online        /    Remove-ProvisionedAppxPackage -Online
+Remove-AppXProvisionedPackage -path 'Mount'  /    Remove-ProvisionedAppxPackage -path 'Mount'
+Remove-WindowsPackage -online                |    Remove-WindowsPackage -path 'Mount'
+
+:: DISM Command
+
+DISM.exe /Online /Get-ProvisionedAppxPackages
+DISM.exe /Online /Add-ProvisionedAppxPackage
+DISM.exe /Online /Remove-ProvisionedAppxPackage
+DISM.exe /Online /Set-ProvisionedAppxDataFile
+DISM.exe /Online /StubPackageOption
+
+DISM.exe /Image:"MOUNT_FOLDER" /Get-ProvisionedAppxPackages
+DISM.exe /Image:"MOUNT_FOLDER" /Add-ProvisionedAppxPackage
+DISM.exe /Image:"MOUNT_FOLDER" /Remove-ProvisionedAppxPackage
+DISM.exe /Image:"MOUNT_FOLDER" /Set-ProvisionedAppxDataFile
+DISM.exe /Image:"MOUNT_FOLDER" /StubPackageOption
+
+
+    :::::::::::::::::::::::
+    :: Real Life example ::
+    :::::::::::::::::::::::
+	
+
+# Variables
+$filter  = 'Microsoft.WindowsTerminal'
+$Msix    = Join-path -Path @(Get-Location) -ChildPath 'Microsoft.WindowsTerminal_3001.12.10982.0_neutral___8wekyb3d8bbwe.Msixbundle'
+$App_A   = Join-path -Path @(Get-Location) -ChildPath 'Microsoft.UI.Xaml.2.7_7.2208.15002.0_x64__8wekyb3d8bbwe.Appx'
+$App_B   = Join-path -Path @(Get-Location) -ChildPath 'Microsoft.VCLibs.140.00.UWPDesktop_14.0.30704.0_x64__8wekyb3d8bbwe.Appx'
+$License = Join-path -Path @(Get-Location) -ChildPath 'microsoft.windowsterminal_8wekyb3d8bbwe.xml'
+
+# Remove From all users
+Get-AppxProvisionedPackage -online | ? PackageName -match $filter | Remove-AppxProvisionedPackage -online -AllUsers
+
+# "Global Install -> terminal appx"
+Add-AppxProvisionedPackage -Online -PackagePath $Msix -DependencyPackagePath $App_A,$App_B -LicensePath $License -ErrorAction SilentlyContinue | out-null
+Dism /Online /Add-ProvisionedAppxPackage /PackagePath:$Msix /DependencyPackagePath:$App_A /DependencyPackagePath:$App_B /LicensePath:$License  | out-null
+
+# "Local Install  -> terminal appx"
+Get-AppxPackage -allusers | ? name -Match $filter | % {
+  $loc = "$($_.InstallLocation)\appxmanifest.xml"
+  if (Test-Path($loc)) {
+    try {
+	  $ProgressPreference = 'SilentlyContinue'    # Subsequent calls do not display UI.
+	  Add-AppxPackage -register $loc -DisableDevelopmentMode -ErrorAction SilentlyContinue | out-null
+	}
+	catch {
+	  #nothing here
+	}
+	finally {
+	  $ProgressPreference = 'Continue'            # Subsequent calls do display UI.
+	}
+  }
+}
